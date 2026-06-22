@@ -56,19 +56,48 @@ def test_risk_alerts_200(client: TestClient):
 
 
 def test_risk_alerts_fields(client: TestClient):
-    # Hanseatic Steel has seeded alerts — find it
+    # Hanseatic Steel fires multiple rules: CARBON_INTENSITY_HIGH, ENERGY_DEPENDENCY_HIGH, CBAM_HIGH_EXPOSURE, LEVERAGE_HIGH
     funds = client.get("/funds").json()
     nordkap = next(f for f in funds if "Nordkap" in f["name"])
     companies = client.get(f"/funds/{nordkap['id']}/portfolio").json()["companies"]
     hanseatic = next(c for c in companies if "Hanseatic" in c["name"])
 
     alerts = client.get(f"/portfolio/{hanseatic['id']}/risk-alerts").json()
-    assert len(alerts) == 2
+    assert len(alerts) >= 2
     for alert in alerts:
-        for field in ("id", "company_id", "severity", "category", "description", "created_at"):
+        for field in ("id", "company_id", "severity", "category", "description", "rule_name", "created_at"):
             assert field in alert
 
 
 def test_risk_alerts_404(client: TestClient):
     response = client.get("/portfolio/9999/risk-alerts")
     assert response.status_code == 404
+
+
+def test_hanseatic_has_leverage_alert(client: TestClient):
+    """Hanseatic Steel (net_debt=250, annual EBITDA~36) → leverage ~6.9× → LEVERAGE_HIGH fires."""
+    funds = client.get("/funds").json()
+    nordkap = next(f for f in funds if "Nordkap" in f["name"])
+    companies = client.get(f"/funds/{nordkap['id']}/portfolio").json()["companies"]
+    hanseatic = next(c for c in companies if "Hanseatic" in c["name"])
+
+    alerts = client.get(f"/portfolio/{hanseatic['id']}/risk-alerts").json()
+    rule_names = {a["rule_name"] for a in alerts}
+    assert "LEVERAGE_HIGH" in rule_names
+
+
+def test_risk_factors_three_composites(client: TestClient):
+    """Every company must have all 3 composites."""
+    company_id = _first_company_id(client)
+    factors = client.get(f"/portfolio/{company_id}/risk-factors").json()
+    types = {f["factor_type"] for f in factors}
+    assert "OVERALL_RISK_SCORE" in types
+    assert "TRANSITION_RISK_COMPOSITE" in types
+    assert "FINANCIAL_RISK_COMPOSITE" in types
+
+
+def test_risk_factors_overall_first(client: TestClient):
+    """OVERALL_RISK_SCORE must be the first factor returned."""
+    company_id = _first_company_id(client)
+    factors = client.get(f"/portfolio/{company_id}/risk-factors").json()
+    assert factors[0]["factor_type"] == "OVERALL_RISK_SCORE"

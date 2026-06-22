@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
 from app.database import create_db_and_tables, engine
-from app.routers import funds, portfolio
+from app.routers import funds, portfolio, risk_factors
+from app.routers import commentary, screening, roi
 from app.seed import seed
 
 
@@ -17,7 +18,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Green Cast API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Green Cast API", version="0.3.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,8 +29,12 @@ app.add_middleware(
 
 app.include_router(funds.router)
 app.include_router(portfolio.router)
+app.include_router(risk_factors.router)
+app.include_router(commentary.router)
+app.include_router(screening.router)
+app.include_router(roi.router)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "0.3.0"}
