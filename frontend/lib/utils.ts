@@ -51,7 +51,13 @@ export function strategyLabel(s: string): string {
   return { PE: "Private Equity", PC: "Private Credit", RE: "Real Estate" }[s] ?? s;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Server components need an absolute URL; the browser uses the same-origin
+// "/be" proxy (see next.config.mjs) to avoid CORS and the localhost fallback.
+const SERVER_API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export function apiBase(): string {
+  return typeof window === "undefined" ? SERVER_API : "/be";
+}
 
 export async function apiFetch<T>(
   path: string,
@@ -63,7 +69,7 @@ export async function apiFetch<T>(
     init.body = JSON.stringify(options.body);
     init.headers = { "Content-Type": "application/json" };
   }
-  const res = await fetch(`${API}${path}`, init);
+  const res = await fetch(`${apiBase()}${path}`, init);
   if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }

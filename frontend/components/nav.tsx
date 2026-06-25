@@ -8,6 +8,7 @@ const links = [
   { href: "/funds",     label: "Portfolio" },
   { href: "/screening", label: "Pre-DD Screening" },
   { href: "/roi",       label: "ROI Calculator" },
+  { href: "/ingestion", label: "AI Normalise" },
 ];
 
 /** Inline leaf SVG mark — two organic curves suggesting a plant shoot */

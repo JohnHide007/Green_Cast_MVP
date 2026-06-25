@@ -154,3 +154,38 @@ export interface RoiResult {
   tier_label: string;
   inputs: RoiInput;
 }
+
+// ── AI Risk Interpretation (Module 4) ───────────────────────────────────────
+export interface InterpretedRisk {
+  title: string;
+  severity: "high" | "medium" | "low";
+  rationale: string;
+  source_refs: string[];
+}
+
+export interface RiskInterpretationResponse {
+  available: boolean;
+  company_id: number;
+  thesis: string;
+  key_risks: InterpretedRisk[];
+  model: string;
+  message?: string;
+}
+
+// ── AI Normalization / Ingestion (Module 1) ─────────────────────────────────
+export interface NormalizedFinancialRow {
+  year: number | null;
+  quarter: number | null;
+  revenue: number | null;
+  ebitda: number | null;
+  net_debt: number | null;
+}
+
+export interface NormalizationResponse {
+  available: boolean;
+  rows: NormalizedFinancialRow[];
+  field_mapping: Record<string, string>;
+  notes: string;
+  model: string;
+  message?: string;
+}

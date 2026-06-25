@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn, factorLabel, riskBadgeClass, riskLabel } from "@/lib/utils";
+import { apiBase, cn, factorLabel, riskBadgeClass, riskLabel } from "@/lib/utils";
 import type { RiskFactor, RiskFactorLineage } from "@/lib/types";
 
 interface Props {
@@ -24,9 +24,7 @@ export function RiskFactorCard({ factor, isComposite = false }: Props) {
     if (lineage) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/risk-factors/${factor.id}/lineage`,
-      );
+      const res = await fetch(`${apiBase()}/risk-factors/${factor.id}/lineage`);
       setLineage(await res.json());
     } finally {
       setLoading(false);

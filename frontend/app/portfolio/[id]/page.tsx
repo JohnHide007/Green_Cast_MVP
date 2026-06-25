@@ -4,6 +4,7 @@ import { apiFetch, riskLabel, riskBadgeClass, factorLabel } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 import { RiskFactorCard } from "@/components/risk-factor-card";
 import { CommentaryPanel } from "@/components/commentary-panel";
+import { InterpretationPanel } from "@/components/interpretation-panel";
 import { RiskGauge } from "@/components/risk-gauge";
 import type {
   PortfolioCompanyDetail,
@@ -151,6 +152,7 @@ export default async function CompanyRiskPage({
 
             {/* AI commentary */}
             <CommentaryPanel companyId={company.id} />
+            <InterpretationPanel companyId={company.id} />
 
             {/* Schema unity note */}
             <div className="rounded border border-gc-teal/20 bg-gc-teal/5 px-4 py-3 text-xs text-gc-muted">
