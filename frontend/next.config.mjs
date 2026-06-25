@@ -4,7 +4,9 @@
 // The browser never calls this directly — it calls the same-origin "/be"
 // path below, which Vercel proxies to the backend. That removes both the
 // localhost-fallback problem and any CORS friction for client-side fetches.
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Backend production domain (auto-tracks latest backend deploy). Override with
+// NEXT_PUBLIC_API_URL if you ever rename the backend project.
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || "https://green-cast-mvp.vercel.app";
 
 const nextConfig = {
   async rewrites() {
