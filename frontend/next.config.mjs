@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 
-// Backend origin. Set NEXT_PUBLIC_API_URL in Vercel (frontend project).
-// The browser never calls this directly — it calls the same-origin "/be"
-// path below, which Vercel proxies to the backend. That removes both the
-// localhost-fallback problem and any CORS friction for client-side fetches.
-// Backend production domain (auto-tracks latest backend deploy). Override with
-// NEXT_PUBLIC_API_URL if you ever rename the backend project.
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || "https://green-cast-mvp.vercel.app";
+// Backend production domain, hardcoded on purpose: NEXT_PUBLIC_API_URL on this
+// project was pointing at the wrong host, which broke the proxy. The browser
+// calls the same-origin "/be/*" path; Vercel proxies it to the backend below
+// (no CORS, no env-var dependency). Update this string only if the backend
+// project is renamed.
+const BACKEND = "https://green-cast-mvp.vercel.app";
 
 const nextConfig = {
   async rewrites() {
