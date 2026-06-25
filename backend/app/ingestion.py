@@ -10,6 +10,7 @@ and the inferred field mapping for auditability.
 Routes through the Vercel AI Gateway. Degrades gracefully without a key.
 """
 
+import hashlib
 import json
 
 from app import ai_gateway
@@ -17,6 +18,8 @@ from app.models import (
     NormalizationResponse,
     NormalizedFinancialRow,
 )
+
+_CACHE: dict[str, NormalizationResponse] = {}
 
 _SYSTEM = (
     "You are a financial data engineer. You map heterogeneous accounting exports "
@@ -59,16 +62,23 @@ def normalize_rows(rows: list[dict], source_hint: str | None = None) -> Normaliz
             available=False,
             message="No rows provided.",
         )
+    cache_key = hashlib.sha256(
+        json.dumps([rows, source_hint], sort_keys=True, default=str).encode()
+    ).hexdigest()
+    if cache_key in _CACHE:
+        return _CACHE[cache_key]
     try:
         prompt = _build_prompt(rows, source_hint)
         data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=4096)
-        return NormalizationResponse(
+        response = NormalizationResponse(
             available=True,
             rows=[NormalizedFinancialRow(**r) for r in data.get("rows", [])],
             field_mapping=data.get("field_mapping", {}),
             notes=data.get("notes", ""),
             model=ai_gateway.get_model(),
         )
+        _CACHE[cache_key] = response
+        return response
     except Exception as exc:
         return NormalizationResponse(
             available=False,

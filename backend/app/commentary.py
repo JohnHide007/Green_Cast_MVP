@@ -12,6 +12,10 @@ scores still render without it.
 from app import ai_gateway
 from app.models import CommentarySentence, CommentaryResponse, RiskAlert, RiskFactor
 
+# Cache successful results per company so re-opening a page (or the refresh
+# button) reuses the generated commentary instead of re-calling the model.
+_CACHE: dict[int, CommentaryResponse] = {}
+
 _SYSTEM = (
     "You are a risk analyst at a European private-markets fund manager. "
     "You write concise, forward-looking, investor-ready commentary and you "
@@ -69,15 +73,20 @@ def generate_commentary(
             message="Commentary unavailable — AI_GATEWAY_API_KEY not configured.",
         )
 
+    if company_id in _CACHE:
+        return _CACHE[company_id]
+
     try:
         prompt = _build_prompt(company_name, sector, factors, alerts)
         data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=4096)
         sentences = [CommentarySentence(**item) for item in data]
-        return CommentaryResponse(
+        response = CommentaryResponse(
             available=True,
             company_id=company_id,
             sentences=sentences,
         )
+        _CACHE[company_id] = response
+        return response
     except Exception as exc:
         return CommentaryResponse(
             available=False,

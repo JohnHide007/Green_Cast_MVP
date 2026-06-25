@@ -16,10 +16,16 @@ gracefully to its rules-based output instead of erroring.
 import json
 import os
 import re
+import time
 from typing import Any, Optional
 
 GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
 DEFAULT_MODEL = "google/gemini-2.5-flash"
+
+# Retry on rate-limit (429). Free-tier Gemini throttles bursts; a short
+# backoff lets back-to-back calls (commentary + interpretation) recover.
+_MAX_ATTEMPTS = 3
+_BACKOFF_SECONDS = (1.0, 2.5)  # waits between attempts
 
 _client: Optional[Any] = None
 
@@ -48,6 +54,14 @@ def _get_client():
     return _client
 
 
+def _is_rate_limit(exc: Exception) -> bool:
+    if getattr(exc, "status_code", None) == 429:
+        return True
+    name = type(exc).__name__
+    text = str(exc)
+    return "RateLimit" in name or "429" in text or "rate_limit" in text
+
+
 def chat(
     prompt: str,
     *,
@@ -63,13 +77,21 @@ def chat(
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    resp = client.chat.completions.create(
-        model=get_model(),
-        max_tokens=max_tokens,
-        temperature=temperature,
-        messages=messages,
-    )
-    return resp.choices[0].message.content
+
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            resp = client.chat.completions.create(
+                model=get_model(),
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=messages,
+            )
+            return resp.choices[0].message.content
+        except Exception as exc:
+            if _is_rate_limit(exc) and attempt < _MAX_ATTEMPTS - 1:
+                time.sleep(_BACKOFF_SECONDS[attempt])
+                continue
+            raise
 
 
 def _extract_json(raw: str) -> str:

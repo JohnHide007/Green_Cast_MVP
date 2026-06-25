@@ -18,6 +18,8 @@ from app.models import (
     RiskInterpretationResponse,
 )
 
+_CACHE: dict[int, RiskInterpretationResponse] = {}
+
 _SYSTEM = (
     "You are a senior portfolio risk officer at a European private-markets fund. "
     "You combine internal financial/ESG signals with external macro and regulatory "
@@ -85,16 +87,20 @@ def interpret_risk(
             company_id=company_id,
             message="Interpretation unavailable — AI_GATEWAY_API_KEY not configured.",
         )
+    if company_id in _CACHE:
+        return _CACHE[company_id]
     try:
         prompt = _build_prompt(company_name, sector, factors, alerts, signals)
         data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=4096)
-        return RiskInterpretationResponse(
+        response = RiskInterpretationResponse(
             available=True,
             company_id=company_id,
             thesis=data.get("thesis", ""),
             key_risks=[InterpretedRisk(**r) for r in data.get("key_risks", [])],
             model=ai_gateway.get_model(),
         )
+        _CACHE[company_id] = response
+        return response
     except Exception as exc:
         return RiskInterpretationResponse(
             available=False,
