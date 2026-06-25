@@ -52,7 +52,7 @@ def chat(
     prompt: str,
     *,
     system: Optional[str] = None,
-    max_tokens: int = 1024,
+    max_tokens: int = 4096,
     temperature: float = 0.3,
 ) -> Optional[str]:
     """Single-turn completion through the gateway. Returns text, or None if AI is unavailable."""
@@ -72,18 +72,29 @@ def chat(
     return resp.choices[0].message.content
 
 
-def _strip_code_fences(raw: str) -> str:
+def _extract_json(raw: str) -> str:
+    """Pull the JSON payload out of a model reply that may include code fences
+    or surrounding prose. Returns the best-effort JSON substring."""
     raw = raw.strip()
-    # Remove ```json ... ``` or ``` ... ``` wrappers that models often add.
     fence = re.match(r"^```(?:json)?\s*(.*?)\s*```$", raw, re.DOTALL)
-    return fence.group(1).strip() if fence else raw
+    if fence:
+        raw = fence.group(1).strip()
+    # If there's leading/trailing prose, slice from the first opening bracket to
+    # the last matching closing bracket.
+    starts = [i for i in (raw.find("["), raw.find("{")) if i != -1]
+    if starts:
+        start = min(starts)
+        end = max(raw.rfind("]"), raw.rfind("}"))
+        if end > start:
+            raw = raw[start : end + 1]
+    return raw.strip()
 
 
 def chat_json(
     prompt: str,
     *,
     system: Optional[str] = None,
-    max_tokens: int = 1024,
+    max_tokens: int = 4096,
     temperature: float = 0.2,
 ) -> Optional[Any]:
     """Like chat(), but parses the model's reply as JSON. Returns None if AI is
@@ -91,7 +102,10 @@ def chat_json(
     raw = chat(prompt, system=system, max_tokens=max_tokens, temperature=temperature)
     if raw is None:
         return None
+    if not raw.strip():
+        raise ValueError("Model returned an empty response (token budget likely exhausted by reasoning).")
     try:
-        return json.loads(_strip_code_fences(raw))
+        return json.loads(_extract_json(raw))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Model did not return valid JSON: {exc}") from exc
+        snippet = raw.strip()[:200]
+        raise ValueError(f"Model did not return valid JSON ({exc}). Got: {snippet!r}") from exc

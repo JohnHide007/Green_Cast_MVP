@@ -61,7 +61,7 @@ def normalize_rows(rows: list[dict], source_hint: str | None = None) -> Normaliz
         )
     try:
         prompt = _build_prompt(rows, source_hint)
-        data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=2048)
+        data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=4096)
         return NormalizationResponse(
             available=True,
             rows=[NormalizedFinancialRow(**r) for r in data.get("rows", [])],

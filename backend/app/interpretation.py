@@ -87,7 +87,7 @@ def interpret_risk(
         )
     try:
         prompt = _build_prompt(company_name, sector, factors, alerts, signals)
-        data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=1024)
+        data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=4096)
         return RiskInterpretationResponse(
             available=True,
             company_id=company_id,
