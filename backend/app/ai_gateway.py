@@ -40,12 +40,12 @@ def _get_client():
     api_key = os.environ.get("AI_GATEWAY_API_KEY", "")
     if not api_key:
         return None
-    try:
-        from openai import OpenAI
-        _client = OpenAI(api_key=api_key, base_url=GATEWAY_BASE_URL)
-        return _client
-    except Exception:
-        return None
+    # Let import/construction errors propagate — callers wrap this in try/except
+    # and surface a readable message, rather than silently degrading to None.
+    from openai import OpenAI
+
+    _client = OpenAI(api_key=api_key, base_url=GATEWAY_BASE_URL)
+    return _client
 
 
 def chat(
