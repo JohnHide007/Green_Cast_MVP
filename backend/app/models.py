@@ -340,3 +340,47 @@ class RoiResult(SQLModel):
     tier: str
     tier_label: str
     inputs: RoiInput
+
+
+# ── AI Risk Interpretation schemas (Module 4) ─────────────────────────────────
+
+class InterpretedRisk(SQLModel):
+    title: str
+    severity: str                  # "high" | "medium" | "low"
+    rationale: str
+    source_refs: list[str] = []    # factor_type / rule_name / signal_type ids
+
+
+class RiskInterpretationResponse(SQLModel):
+    available: bool
+    company_id: int
+    thesis: str = ""               # one-paragraph forward-looking risk thesis
+    key_risks: list[InterpretedRisk] = []
+    model: str = ""
+    message: Optional[str] = None
+
+
+# ── AI Normalization / Ingestion schemas (Module 1) ───────────────────────────
+
+class NormalizationInput(SQLModel):
+    # Raw rows as submitted by a portfolio company (Exact/SAP/Xero/Excel export).
+    # Keys are arbitrary/inconsistent — the AI maps them to the canonical schema.
+    rows: list[dict]
+    source_hint: Optional[str] = None   # e.g. "SAP", "Xero", "Excel"
+
+
+class NormalizedFinancialRow(SQLModel):
+    year: Optional[int] = None
+    quarter: Optional[int] = None
+    revenue: Optional[float] = None
+    ebitda: Optional[float] = None
+    net_debt: Optional[float] = None
+
+
+class NormalizationResponse(SQLModel):
+    available: bool
+    rows: list[NormalizedFinancialRow] = []
+    field_mapping: dict = {}       # {source_field: canonical_field} the AI inferred
+    notes: str = ""
+    model: str = ""
+    message: Optional[str] = None

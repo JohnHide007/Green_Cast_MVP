@@ -1,30 +1,22 @@
 """
-AI commentary layer — calls Claude to produce attributed sentences about a
-company's risk profile. Falls back gracefully when ANTHROPIC_API_KEY is absent.
+AI commentary layer (Module 5) — turns the deterministic risk numbers + fired
+alerts into investor-ready, attributed sentences. Each sentence cites the
+rule/factor it came from, which is what makes the output auditable rather than
+a black box.
+
+Runs through the Vercel AI Gateway (see app.ai_gateway). Degrades gracefully to
+an "unavailable" response when no AI Gateway key is configured — the rules-based
+scores still render without it.
 """
 
-import json
-import os
-from typing import Optional
-
+from app import ai_gateway
 from app.models import CommentarySentence, CommentaryResponse, RiskAlert, RiskFactor
 
-_CLIENT: Optional[object] = None
-
-
-def _get_client():
-    global _CLIENT
-    if _CLIENT is not None:
-        return _CLIENT
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return None
-    try:
-        import anthropic
-        _CLIENT = anthropic.Anthropic(api_key=api_key)
-        return _CLIENT
-    except Exception:
-        return None
+_SYSTEM = (
+    "You are a risk analyst at a European private-markets fund manager. "
+    "You write concise, forward-looking, investor-ready commentary and you "
+    "never fabricate numbers."
+)
 
 
 def _build_prompt(
@@ -42,12 +34,12 @@ def _build_prompt(
         for a in alerts
     ) or "  (none)"
 
-    return f"""You are a risk analyst at a private markets fund manager. Write a concise 4–6 sentence commentary on the following portfolio company's risk profile. Each sentence MUST end with its source references in brackets using the exact factor_type or rule_name identifiers provided below — e.g. [CARBON_INTENSITY_HIGH] or [OVERALL_RISK_SCORE].
+    return f"""Write a concise 4-6 sentence commentary on the following portfolio company's risk profile. Each sentence MUST end with its source references in brackets using the exact factor_type or rule_name identifiers provided below — e.g. [CARBON_INTENSITY_HIGH] or [OVERALL_RISK_SCORE].
 
 Company: {company_name}
 Sector: {sector}
 
-Risk Factors (computed, 0–100 scale, higher = worse):
+Risk Factors (computed, 0-100 scale, higher = worse):
 {factor_lines}
 
 Active Risk Alerts (deterministic rule engine):
@@ -69,24 +61,17 @@ def generate_commentary(
     factors: list[RiskFactor],
     alerts: list[RiskAlert],
 ) -> CommentaryResponse:
-    client = _get_client()
-    if client is None:
+    if not ai_gateway.is_configured():
         return CommentaryResponse(
             available=False,
             company_id=company_id,
             sentences=[],
-            message="Commentary unavailable — ANTHROPIC_API_KEY not configured.",
+            message="Commentary unavailable — AI_GATEWAY_API_KEY not configured.",
         )
 
     try:
         prompt = _build_prompt(company_name, sector, factors, alerts)
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = message.content[0].text.strip()
-        data = json.loads(raw)
+        data = ai_gateway.chat_json(prompt, system=_SYSTEM, max_tokens=1024)
         sentences = [CommentarySentence(**item) for item in data]
         return CommentaryResponse(
             available=True,

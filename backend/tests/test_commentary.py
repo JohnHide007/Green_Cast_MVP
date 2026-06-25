@@ -1,11 +1,11 @@
 """
-Tests for the commentary endpoint.
-- Without ANTHROPIC_API_KEY: must return available=False with a message
+Tests for the commentary endpoint (now routed through the Vercel AI Gateway).
+- Without AI_GATEWAY_API_KEY: must return available=False with a message
 - Response structure must always conform to CommentaryResponse schema
+- With the gateway mocked: sentences and source_refs must be present
 """
 
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -20,14 +20,9 @@ def _first_hanseatic_id(client: TestClient) -> int:
 
 class TestCommentaryNoApiKey:
     def test_graceful_degrade_without_key(self, client: TestClient):
-        """Without API key, response must be available=False, not 5xx."""
+        """Without a gateway key, response must be available=False, not 5xx."""
         company_id = _first_hanseatic_id(client)
-        # Ensure ANTHROPIC_API_KEY is absent
-        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
-        with patch.dict(os.environ, env, clear=True):
-            # Reset module-level cached client
-            import app.commentary as commentary_module
-            commentary_module._CLIENT = None
+        with patch("app.ai_gateway.is_configured", return_value=False):
             resp = client.post(f"/portfolio/{company_id}/commentary")
         assert resp.status_code == 200
         data = resp.json()
@@ -37,10 +32,7 @@ class TestCommentaryNoApiKey:
 
     def test_degrade_response_structure(self, client: TestClient):
         company_id = _first_hanseatic_id(client)
-        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
-        with patch.dict(os.environ, env, clear=True):
-            import app.commentary as commentary_module
-            commentary_module._CLIENT = None
+        with patch("app.ai_gateway.is_configured", return_value=False):
             resp = client.post(f"/portfolio/{company_id}/commentary")
         data = resp.json()
         assert "available" in data
@@ -53,29 +45,20 @@ class TestCommentaryNoApiKey:
 
 
 class TestCommentaryMocked:
-    def test_mocked_claude_returns_sentences(self, client: TestClient):
-        """With a mocked anthropic client, sentences and source_refs must be present."""
+    def test_mocked_gateway_returns_sentences(self, client: TestClient):
+        """With the gateway mocked, sentences and source_refs must be present."""
         company_id = _first_hanseatic_id(client)
 
-        fake_response_text = (
-            '[{"sentence": "Carbon intensity is elevated at 312 tCO2e/€M. [CARBON_INTENSITY_HIGH]", '
-            '"source_refs": ["CARBON_INTENSITY_HIGH"]}, '
-            '{"sentence": "Leverage at 6.9× EBITDA is above PE threshold. [LEVERAGE_HIGH]", '
-            '"source_refs": ["LEVERAGE_HIGH"]}]'
-        )
-        mock_msg = MagicMock()
-        mock_msg.content = [MagicMock(text=fake_response_text)]
+        fake_json = [
+            {"sentence": "Carbon intensity is elevated at 312 tCO2e/€M. [CARBON_INTENSITY_HIGH]",
+             "source_refs": ["CARBON_INTENSITY_HIGH"]},
+            {"sentence": "Leverage at 6.9× EBITDA is above PE threshold. [LEVERAGE_HIGH]",
+             "source_refs": ["LEVERAGE_HIGH"]},
+        ]
 
-        mock_client = MagicMock()
-        mock_client.messages.create.return_value = mock_msg
-
-        import app.commentary as commentary_module
-        original_client = commentary_module._CLIENT
-        commentary_module._CLIENT = mock_client
-        try:
+        with patch("app.ai_gateway.is_configured", return_value=True), \
+             patch("app.ai_gateway.chat_json", return_value=fake_json):
             resp = client.post(f"/portfolio/{company_id}/commentary")
-        finally:
-            commentary_module._CLIENT = original_client
 
         assert resp.status_code == 200
         data = resp.json()

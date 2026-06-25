@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.database import create_db_and_tables, engine
 from app.routers import funds, portfolio, risk_factors
 from app.routers import commentary, screening, roi
+from app.routers import interpretation, ingestion
 from app.seed import seed
 
 
@@ -34,6 +35,8 @@ app.include_router(risk_factors.router)
 app.include_router(commentary.router)
 app.include_router(screening.router)
 app.include_router(roi.router)
+app.include_router(interpretation.router)
+app.include_router(ingestion.router)
 
 
 @app.get("/health")
