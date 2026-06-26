@@ -234,26 +234,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Impact stats bar ── */}
-      <section className="border-b border-gc-border bg-gc-surface py-12">
+      {/* ── Impact stats (card layout) ── */}
+      <section className="border-b border-gc-border bg-gc-bg py-16 md:py-20">
         <div className="mx-auto max-w-screen-xl px-6">
-          <p className="mb-8 text-xs font-semibold uppercase tracking-wider text-gc-green">
+          <h2 className="mb-10 text-2xl font-bold tracking-tight text-gc-text md:text-3xl">
             The impact
-          </p>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+          </h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["60–80 hrs", "Analyst time per fund every quarter, today spent consolidating spreadsheets by hand"],
-              ["Weeks → hours", "Reporting cycle once the engine drafts the commentary"],
-              ["~80%", "Of the report write-up step automated, at default ROI inputs"],
-              ["63%", "Of firms already using or planning AI for ESG data*"],
-            ].map(([val, label]) => (
-              <div key={label} className="animate-fade-up">
-                <p className="font-mono text-3xl font-bold text-gc-green">{val}</p>
-                <p className="mt-1 text-sm text-gc-muted">{label}</p>
+              { value: "60–80 hrs", body: "Analyst time per fund every quarter, today spent consolidating spreadsheets by hand.", k: "Basis", v: "Per fund / quarter" },
+              { value: "Weeks → hours", body: "Reporting cycle once the engine drafts the commentary.", k: "Scope", v: "Per reporting cycle" },
+              { value: "~80%", body: "Of the report write-up step automated, at default ROI inputs.", k: "Step", v: "Commentary write-up" },
+              { value: "63%", body: "Of firms already using or planning AI for ESG data.", k: "Signal", v: "Industry adoption*" },
+            ].map((s) => (
+              <div
+                key={s.value}
+                className="flex flex-col rounded-2xl border border-gc-border bg-gc-surface p-7 shadow-sm transition hover:shadow-md"
+              >
+                <p className="text-4xl font-bold tracking-tight text-gc-green">{s.value}</p>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-gc-muted">{s.body}</p>
+                <div className="mt-6 flex items-center justify-between border-t border-gc-border pt-4">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gc-muted">{s.k}</span>
+                  <span className="text-xs font-medium text-gc-text">{s.v}</span>
+                </div>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-xs text-gc-muted">
+          <p className="mt-8 max-w-3xl text-xs leading-relaxed text-gc-muted">
             *Industry adoption benchmark. Private credit AUM alone stands at ~$1.6T and is projected to triple by 2029,
             with mid-market funds under sustained CSRD / SFDR reporting pressure.
           </p>
@@ -276,7 +283,7 @@ export default function LandingPage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group rounded-lg border border-gc-border bg-gc-surface p-6 shadow-sm transition hover:border-gc-green/40 hover:shadow-md"
+                className="group rounded-2xl border border-gc-border bg-gc-surface p-7 shadow-sm transition hover:border-gc-green/40 hover:shadow-md"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gc-green/10 transition group-hover:bg-gc-green/20">
                   <f.Icon />
@@ -307,7 +314,7 @@ export default function LandingPage() {
               ["Investor-ready output", "Commentary drops straight into LP reports and IC memos without analyst rewriting — and every sentence is attributable to a rule or data point."],
               ["Built for the mid-market", "Modular, days-not-weeks onboarding and pricing sized for sub-€2bn funds that enterprise tools like MSCI or Sustainalytics price out."],
             ].map(([title, body]) => (
-              <div key={title} className="rounded-lg border border-gc-border bg-gc-bg p-6">
+              <div key={title} className="rounded-2xl border border-gc-border bg-gc-surface p-7 shadow-sm">
                 <div className="mb-3 h-1.5 w-8 rounded-full bg-gc-green" />
                 <h3 className="mb-2 font-semibold text-gc-text">{title}</h3>
                 <p className="text-sm leading-relaxed text-gc-muted">{body}</p>
@@ -347,7 +354,7 @@ export default function LandingPage() {
               Common questions
             </h2>
           </div>
-          <div className="mx-auto max-w-3xl divide-y divide-gc-border rounded-lg border border-gc-border bg-gc-bg">
+          <div className="mx-auto max-w-3xl divide-y divide-gc-border rounded-2xl border border-gc-border bg-gc-bg">
             {[
               ["How long does it take to get my portfolio up and running?", "Days, not weeks. Your portfolio companies send financials in whatever format they already use — Exact, SAP, Xero, Twinfield, Excel — and the AI normalisation engine maps them onto one schema. There's no bespoke connector to build for each source."],
               ["Can I actually trust the AI commentary in an LP report?", "Yes — it's designed to be audited, not taken on faith. Deterministic rules compute every number; the AI only writes the narrative on top, and each sentence cites the exact rule or data point behind it. You can hand it to an investment committee and trace any claim to its source."],
