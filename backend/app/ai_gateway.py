@@ -85,6 +85,9 @@ def chat(
                 max_tokens=max_tokens,
                 temperature=temperature,
                 messages=messages,
+                # Cap reasoning tokens so "thinking" models (e.g. Gemini 2.5
+                # Flash) leave enough budget for the actual JSON output.
+                extra_body={"reasoning": {"max_tokens": 1024}},
             )
             return resp.choices[0].message.content
         except Exception as exc:

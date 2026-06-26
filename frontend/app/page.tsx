@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RoiCalculator } from "@/components/roi-calculator";
 
 // ── Inline SVG feature icons ─────────────────────────────────────────────────
 
@@ -159,7 +160,7 @@ const features = [
   {
     Icon: IconBrain,
     title: "Hybrid AI + Rules Engine",
-    body: "Deterministic rules compute the numbers. Claude writes the narrative on top — every sentence cites the rule and data point behind it.",
+    body: "Deterministic rules compute the numbers. An LLM writes the narrative on top (via Vercel AI Gateway) — every sentence cites the rule and data point behind it.",
   },
   {
     Icon: IconSearch,
@@ -233,15 +234,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
-      <section className="border-b border-gc-border bg-gc-surface py-10">
+      {/* ── Impact stats bar ── */}
+      <section className="border-b border-gc-border bg-gc-surface py-12">
         <div className="mx-auto max-w-screen-xl px-6">
+          <p className="mb-8 text-xs font-semibold uppercase tracking-wider text-gc-green">
+            The impact
+          </p>
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {[
-              ["30", "Portfolio companies"],
-              ["3",  "Funds across PE · PC · RE"],
-              ["9",  "Risk factor types"],
-              ["100%", "Attributed AI output"],
+              ["60–80 hrs", "Analyst time per fund every quarter, today spent consolidating spreadsheets by hand"],
+              ["Weeks → hours", "Reporting cycle once the engine drafts the commentary"],
+              ["~80%", "Of the report write-up step automated, at default ROI inputs"],
+              ["63%", "Of firms already using or planning AI for ESG data*"],
             ].map(([val, label]) => (
               <div key={label} className="animate-fade-up">
                 <p className="font-mono text-3xl font-bold text-gc-green">{val}</p>
@@ -249,6 +253,10 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <p className="mt-6 text-xs text-gc-muted">
+            *Industry adoption benchmark. Private credit AUM alone stands at ~$1.6T and is projected to triple by 2029,
+            with mid-market funds under sustained CSRD / SFDR reporting pressure.
+          </p>
         </div>
       </section>
 
@@ -276,6 +284,85 @@ export default function LandingPage() {
                 <h3 className="mb-2 font-semibold text-gc-text">{f.title}</h3>
                 <p className="text-sm leading-relaxed text-gc-muted">{f.body}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why funds use it ── */}
+      <section className="border-t border-gc-border bg-gc-surface py-20">
+        <div className="mx-auto max-w-screen-xl px-6">
+          <div className="mb-12">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gc-green">
+              Why funds use Green Cast
+            </p>
+            <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-gc-text md:text-3xl">
+              Forward-looking risk intelligence, not another compliance snapshot
+            </h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["Catch risk early", "Flags operational and regulatory risk before it shows up in the financials — the opposite of a backward-looking quarterly report."],
+              ["One unified view", "Financials, ESG exposure and macro signals normalise into a single score. Click any number to see the raw input and the transform behind it."],
+              ["Investor-ready output", "Commentary drops straight into LP reports and IC memos without analyst rewriting — and every sentence is attributable to a rule or data point."],
+              ["Built for the mid-market", "Modular, days-not-weeks onboarding and pricing sized for sub-€2bn funds that enterprise tools like MSCI or Sustainalytics price out."],
+            ].map(([title, body]) => (
+              <div key={title} className="rounded-lg border border-gc-border bg-gc-bg p-6">
+                <div className="mb-3 h-1.5 w-8 rounded-full bg-gc-green" />
+                <h3 className="mb-2 font-semibold text-gc-text">{title}</h3>
+                <p className="text-sm leading-relaxed text-gc-muted">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI calculator ── */}
+      <section className="bg-gc-bg py-20" id="roi">
+        <div className="mx-auto max-w-screen-xl px-6">
+          <div className="mb-10 max-w-2xl">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gc-green">
+              See the payback
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-gc-text md:text-3xl">
+              What it saves your fund
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-gc-muted">
+              Estimate the analyst hours Green Cast replaces versus the subscription cost.
+              Most mid-market funds reach payback in under a quarter on default inputs.
+            </p>
+          </div>
+          <RoiCalculator />
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="border-t border-gc-border bg-gc-surface py-20" id="faq">
+        <div className="mx-auto max-w-screen-xl px-6">
+          <div className="mb-10">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gc-green">
+              FAQ
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-gc-text md:text-3xl">
+              Common questions
+            </h2>
+          </div>
+          <div className="mx-auto max-w-3xl divide-y divide-gc-border rounded-lg border border-gc-border bg-gc-bg">
+            {[
+              ["Is the AI a black box?", "No — and that's the core design. Deterministic rules compute every risk score; the LLM only writes the narrative on top. Each sentence cites the exact rule or factor it came from, so an analyst can audit it line by line."],
+              ["Is my portfolio data used to train AI models?", "No. Commentary is generated through the Vercel AI Gateway, and a production deployment would run on a private/paid model tier with no training on your data. This demo uses entirely synthetic holdings."],
+              ["Where does the data in this demo come from?", "The companies are synthetic for confidentiality, but they're scored against real EU regulatory anchors — EU ETS sector carbon intensities, EPC bands A–G, the actual CBAM-covered sectors, and realistic leverage/LTV ranges."],
+              ["What financial formats can it ingest?", "Exact, SAP, Xero, Twinfield and Excel/CSV exports. The AI normalisation engine maps inconsistent columns onto one canonical schema, so onboarding takes days rather than weeks of bespoke connector work."],
+              ["Which regulations does it track?", "Signals for CSRD, SFDR, EU Taxonomy, CBAM and AIFMD II are mapped to specific holdings, so the value of the unified layer grows as regulatory complexity compounds."],
+              ["How is it priced?", "Recurring SaaS subscription tiered by portfolio size — Starter, Growth and Enterprise — with onboarding fees and API/white-label reporting as secondary streams."],
+            ].map(([q, a]) => (
+              <details key={q} className="group px-6 py-4">
+                <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-gc-text marker:content-['']">
+                  {q}
+                  <span className="ml-4 text-gc-muted transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-gc-muted">{a}</p>
+              </details>
             ))}
           </div>
         </div>
